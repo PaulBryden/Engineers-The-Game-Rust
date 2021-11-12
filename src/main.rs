@@ -6,9 +6,15 @@ use macroquad::{
         animation::{AnimatedSprite, Animation},
     },
 };
-pub mod sprite;
+ mod sprites{
+    pub mod sprite;
+    pub mod tilesprite;
+    pub mod engineersprite;
+}
 pub mod tiledmap;
-use sprite::{Engineer, Sprite, TileSprite};
+use sprites::sprite::{Sprite, grid_to_world_coords};
+use sprites::tilesprite::TileSprite;
+use sprites::engineersprite::Engineer;
 #[macroquad::main("engineers")]
 async fn main() {
     let tileset = load_texture("assets/tileset.png").await.unwrap();
@@ -36,10 +42,12 @@ async fn main() {
             }],
             true,
         ),
-        x: sprite::grid_to_world_coords(vec2(1.0, 1.0)).x,
-        y: sprite::grid_to_world_coords(vec2(1.0, 1.0)).y,
+        x: grid_to_world_coords(vec2(1.0, 1.0)).x,
+        y: grid_to_world_coords(vec2(1.0, 1.0)).y,
     }));
+    
     let mut camera_movement_var = 10.; // camera movement speed multiplier.
+
     loop {
         clear_background(BLACK);
         if camera_movement_var < 700. {
