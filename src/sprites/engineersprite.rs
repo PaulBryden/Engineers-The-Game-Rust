@@ -1,12 +1,5 @@
-
-use macroquad::{
-    color,
-    prelude::*,
-    experimental::{
-        animation::{AnimatedSprite}
-    },
-};
-use super::sprite::{Sprite,world_to_grid_coords};
+use super::sprite::{world_to_grid_coords, Sprite};
+use macroquad::{color, experimental::animation::AnimatedSprite, prelude::*};
 pub struct Engineer {
     pub texture: Texture2D,
     pub animated_sprite: AnimatedSprite,
@@ -14,12 +7,11 @@ pub struct Engineer {
     pub y: f32,
 }
 
-
 impl Sprite for Engineer {
     fn get_zindex(&self) -> u32 {
         let grid_coords = world_to_grid_coords(vec2(self.x, self.y));
 
-        (grid_coords.x + grid_coords.y+1.) as u32
+        (grid_coords.x + grid_coords.y + 1.) as u32
     }
     fn get_tile_pos(&self) -> Vec2 {
         vec2(self.x as f32, self.y as f32)

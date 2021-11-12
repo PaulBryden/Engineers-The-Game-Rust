@@ -1,7 +1,4 @@
-
-use macroquad::{
-    prelude::*,
-};
+use macroquad::prelude::*;
 
 pub trait Sprite {
     fn get_zindex(&self) -> u32;
@@ -15,6 +12,7 @@ pub fn grid_to_world_coords(grid_pos: Vec2) -> Vec2 {
         ((grid_pos.y as f32 * 32. / 2.0) + (grid_pos.x as f32 * 32. / 2.0)) - 8.,
     )
 }
+
 pub fn world_to_grid_coords(world_pos: Vec2) -> Vec2 //In Testing
 {
     vec2(

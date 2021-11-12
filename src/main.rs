@@ -29,6 +29,8 @@ async fn main() {
 
     /*Generate Tiled Sprite List*/
     let mut sprite_list_vector: Vec<Box<dyn Sprite>> = get_tilemap_spritelist(tileset, map_cast);
+
+    //Add Engineer Sprite
     sprite_list_vector.push(Box::new(Engineer {
         texture: engineer_anim,
         animated_sprite: AnimatedSprite::new(
@@ -64,10 +66,11 @@ async fn main() {
             ..Default::default()
         });
 
-        sprite_list_vector.sort_by(|a, b| a.get_zindex().cmp(&b.get_zindex())); //Z-Index sort for rendering
+        //Z-Index Sorting for render ordering
+        sprite_list_vector.sort_by(|a, b| a.get_zindex().cmp(&b.get_zindex())); 
 
         for sprite in sprite_list_vector.iter_mut() {
-            sprite.draw();
+            sprite.draw(); //Draw all sprites in Sprite List
         }
         next_frame().await;
     }
@@ -77,7 +80,6 @@ pub fn get_tilemap_spritelist(
     tileset: Texture2D,
     tilemap: tiledmap::TiledMap,
 ) -> Vec<Box<dyn Sprite>>
-//vector of sprites for Z index rendering
 {
     let mut sprite_list: Vec<Box<dyn Sprite>> = Vec::new();
     for layer_num in 0 as usize..tilemap.layers.len() as usize {
