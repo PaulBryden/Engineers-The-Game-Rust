@@ -19,7 +19,7 @@ impl Sprite for TileSprite {
         if self.layer == 1 {
             0
         } else {
-            1 + (self.x + self.y)
+            1 + ((self.x + self.y)/2)
         }
     }
     fn get_tile_pos(&self) -> Vec2 {

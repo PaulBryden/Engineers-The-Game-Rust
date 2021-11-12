@@ -2,6 +2,7 @@ use include_dir::include_dir;
 use include_dir::Dir;
 use macroquad::prelude::*;
 use macroquad::{
+    audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound},
     experimental::{
         animation::{AnimatedSprite, Animation},
     },
@@ -19,7 +20,9 @@ use sprites::engineersprite::Engineer;
 async fn main() {
     let tileset = load_texture("assets/tileset.png").await.unwrap();
     let engineer_anim = load_texture("assets/spritesheet_rock.png").await.unwrap();
-
+    let background_music = load_sound("assets/music/background_music.ogg")
+        .await
+        .unwrap();
     /*Load JSON Tilemap*/
     static PROJECT_DIR: Dir = include_dir!("assets");
     let lib_rs = PROJECT_DIR.get_file("tiledmap.json").unwrap();
@@ -44,11 +47,21 @@ async fn main() {
             }],
             true,
         ),
-        x: grid_to_world_coords(vec2(1.0, 1.0)).x,
-        y: grid_to_world_coords(vec2(1.0, 1.0)).y,
+        x: grid_to_world_coords(vec2(12.0, 4.0)).x,
+        y: grid_to_world_coords(vec2(12.0, 4.0)).y,
     }));
     
     let mut camera_movement_var = 10.; // camera movement speed multiplier.
+
+
+
+    play_sound(
+        background_music,
+        PlaySoundParams {
+            looped: true,
+            volume: 0.3,
+        },
+    );
 
     loop {
         clear_background(BLACK);
