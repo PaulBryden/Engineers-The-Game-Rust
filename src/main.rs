@@ -6,6 +6,7 @@ use macroquad::{
     experimental::{
         animation::{AnimatedSprite, Animation},
     },
+    input::*
 };
  mod sprites{
     pub mod sprite;
@@ -13,7 +14,7 @@ use macroquad::{
     pub mod engineersprite;
 }
 pub mod tiledmap;
-use sprites::sprite::{Sprite, grid_to_world_coords};
+use sprites::sprite::{Sprite, grid_to_world_coords,world_to_grid_coords};
 use sprites::tilesprite::TileSprite;
 use sprites::engineersprite::Engineer;
 #[macroquad::main("engineers")]
@@ -70,14 +71,15 @@ async fn main() {
         } else {
             camera_movement_var = 0.0; //increment camera position.
         }
-        set_camera(&Camera2D {
+        let camera = Camera2D {
             zoom: vec2(
                 1. / macroquad::window::screen_width() * 1.5,
                 -1. / macroquad::window::screen_height() * 1.5,
             ),
             target: vec2(0.0 + camera_movement_var, 0.0 + camera_movement_var),
             ..Default::default()
-        });
+        };
+        set_camera(&camera);
 
         //Z-Index Sorting for render ordering
         sprite_list_vector.sort_by(|a, b| a.get_zindex().cmp(&b.get_zindex())); 
@@ -85,6 +87,24 @@ async fn main() {
         for sprite in sprite_list_vector.iter_mut() {
             sprite.draw(); //Draw all sprites in Sprite List
         }
+
+        let (mouse_x, mouse_y) = mouse_position();
+        if(is_mouse_button_released(MouseButton::Left))
+        {
+            println!("mouse x: {}",mouse_x);
+            println!("mouse y: {}",mouse_y);
+            println!("camera_location X: {}",camera_movement_var);
+            println!("camera_location Y: {}",camera_movement_var);
+            let xWorld = (mouse_x- macroquad::window::screen_width()/2.) +camera_movement_var;
+            let yWorld = (mouse_y- macroquad::window::screen_height()/2.) +camera_movement_var;
+            let mut worldVec = camera.screen_to_world(vec2(mouse_x,mouse_y));
+            println!("World X: {}",worldVec.x);
+            println!("World Y: {}",worldVec.y);
+            println!("Grid X: {}",world_to_grid_coords(worldVec).x-1.);
+            println!("Grid Y: {}",world_to_grid_coords(worldVec).y);
+
+        }
+
         next_frame().await;
     }
 }
