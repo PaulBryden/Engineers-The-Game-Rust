@@ -3,6 +3,8 @@ use macroquad::{
     prelude::*,
 };
 use super::sprite::{Sprite};
+use std::any::Any;
+use super::super::pathfinding::pathfinder::{TilePosition};
 pub struct TileSprite {
     pub texture: Texture2D,
     pub frame_number: u32,
@@ -15,6 +17,14 @@ pub struct TileSprite {
 
 
 impl Sprite for TileSprite {
+    
+    fn as_any(&mut self) -> &mut dyn Any {
+        self
+    }
+    
+    fn updatePath(&mut self, path: Vec<TilePosition>)
+    {
+    }
     fn get_zindex(&self) -> u32 {
         if self.layer == 1 {
             0
@@ -48,6 +58,7 @@ impl Sprite for TileSprite {
             },
         );
     }
+fn update(&mut self, _: f64) {  }
 }
 
 impl TileSprite {

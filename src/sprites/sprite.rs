@@ -1,9 +1,13 @@
 use macroquad::prelude::*;
-
+use std::any::Any;
+use super::super::pathfinding::pathfinder::{TilePosition};
 pub trait Sprite {
     fn get_zindex(&self) -> u32;
     fn get_tile_pos(&self) -> Vec2;
     fn draw(&mut self);
+    fn as_any(&mut self) -> &mut dyn Any;
+    fn updatePath(&mut self, path: Vec<TilePosition>);
+    fn update(&mut self, time: f64);
 }
 
 pub fn grid_to_world_coords(grid_pos: Vec2) -> Vec2 {

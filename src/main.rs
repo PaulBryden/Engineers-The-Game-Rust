@@ -21,7 +21,7 @@ pub mod tiledmap;
 use sprites::sprite::{Sprite, grid_to_world_coords,world_to_grid_coords};
 use sprites::tilesprite::TileSprite;
 use sprites::engineersprite::Engineer;
-use pathfinding::pathfinder::Pathfinder;
+use pathfinding::pathfinder::{Pathfinder, TilePosition};
 #[macroquad::main("engineers")]
 async fn main() {
     static ASSETS_DIR: Dir = include_dir!("assets");
@@ -43,10 +43,9 @@ async fn main() {
     /****************************/
 
     /*Generate Tiled Sprite List*/
-    let mut sprite_list_vector: Vec<Box<dyn Sprite>> = get_tilemap_spritelist(tileset, map_cast);
+    let mut sprite_list_vector: Vec<Box<dyn Sprite>> = get_tilemap_spritelist(tileset, &map_cast);
 
-    //Add Engineer Sprite
-    sprite_list_vector.push(Box::new(Engineer {
+    let engy_sprite = Engineer {
         texture: engineer_anim,
         animated_sprite: AnimatedSprite::new(
             64,
@@ -61,11 +60,14 @@ async fn main() {
         ),
         x: grid_to_world_coords(vec2(12.0, 4.0)).x,
         y: grid_to_world_coords(vec2(12.0, 4.0)).y,
-    }));
+        currentPath: Vec::new()
+    };
+    //Add Engineer Sprite
+    sprite_list_vector.push(Box::new(engy_sprite));
     
     let mut camera_movement_var = 10.; // camera movement speed multiplier.
 
-
+    let pathfinder_local = get_pathfinder(map_cast);
 
     play_sound(
         background_music,
@@ -74,8 +76,9 @@ async fn main() {
             volume: 0.3,
         },
     );
-
+    let mut lastTimeRecorded: f64 = get_time();
     loop {
+        
         clear_background(BLACK);
         if camera_movement_var < 700. {
             camera_movement_var += 1.0
@@ -94,10 +97,12 @@ async fn main() {
 
         //Z-Index Sorting for render ordering
         sprite_list_vector.sort_by(|a, b| a.get_zindex().cmp(&b.get_zindex())); 
-
+        let current_time = get_time();
         for sprite in sprite_list_vector.iter_mut() {
+            sprite.update(current_time-lastTimeRecorded);
             sprite.draw(); //Draw all sprites in Sprite List
         }
+        lastTimeRecorded=current_time;
 
         let (mouse_x, mouse_y) = mouse_position();
         if is_mouse_button_released(MouseButton::Left)
@@ -109,10 +114,26 @@ async fn main() {
             let world_vec = camera.screen_to_world(vec2(mouse_x,mouse_y));
             println!("World X: {}",world_vec.x);
             println!("World Y: {}",world_vec.y);
+            let grid_coords =world_to_grid_coords(world_vec);
             println!("Grid X: {}",world_to_grid_coords(world_vec).x-1.);
             println!("Grid Y: {}",world_to_grid_coords(world_vec).y);
 
+            let tilePos = TilePosition{x:12, y:4};
+            
+            println!("tilePos X: {}",tilePos.x);
+            println!("tilePos Y: {}",tilePos.y);
+            let path =pathfinder_local.find_path(TilePosition{x: tilePos.x as i32, y: tilePos.y as i32}, TilePosition{x: grid_coords.x as i32, y: grid_coords.y as i32});
+                // back to the original, concrete type.
+
+            for sprite in sprite_list_vector.iter_mut() {
+                sprite.updatePath(path.clone());//Draw all sprites in Sprite List
+            }
+            for pos in path {
+                println!("Pos.x:{}, Pos.y:{}", pos.x, pos.y);
+            }
+            
         }
+
 
         next_frame().await;
     }
@@ -125,7 +146,7 @@ pub fn get_pathfinder(tilemap: tiledmap::TiledMap) -> Pathfinder
 
 pub fn get_tilemap_spritelist(
     tileset: Texture2D,
-    tilemap: tiledmap::TiledMap,
+    tilemap: &tiledmap::TiledMap,
 ) -> Vec<Box<dyn Sprite>>
 {
     let mut sprite_list: Vec<Box<dyn Sprite>> = Vec::new();
