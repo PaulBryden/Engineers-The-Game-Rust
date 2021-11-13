@@ -42,6 +42,14 @@ pub struct LayerData {
     x: i64,
     y: i64,
 }
+
+impl LayerData
+{
+    pub fn get_tile_at(&self, x: u32, y: u32) -> u32
+    {
+        self.data[((y*(self.width as u32))+x) as usize] as u32
+    }
+}
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TileSet {
     columns: i64,
@@ -61,12 +69,12 @@ pub struct TileSet {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Tile {
     pub id: i64,
-    properties: Vec<Property>,
+    pub properties: Vec<Property>,
 }
 #[derive(Serialize, Deserialize, Debug)]
-struct Property {
+pub struct Property {
     name: String,
     #[serde(rename = "type")]
     tiled_type: String,
-    value: bool,
+    pub value: bool,
 }

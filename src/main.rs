@@ -1,12 +1,16 @@
 use include_dir::include_dir;
 use include_dir::Dir;
 use macroquad::prelude::*;
+mod pathfinding
+{
+    pub mod pathfinder;
+}
 use macroquad::{
-    audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound},
+    audio::{play_sound,PlaySoundParams, 
+    load_sound_from_bytes},
     experimental::{
         animation::{AnimatedSprite, Animation},
     },
-    input::*
 };
  mod sprites{
     pub mod sprite;
@@ -17,16 +21,23 @@ pub mod tiledmap;
 use sprites::sprite::{Sprite, grid_to_world_coords,world_to_grid_coords};
 use sprites::tilesprite::TileSprite;
 use sprites::engineersprite::Engineer;
+use pathfinding::pathfinder::Pathfinder;
 #[macroquad::main("engineers")]
 async fn main() {
-    let tileset = load_texture("assets/tileset.png").await.unwrap();
-    let engineer_anim = load_texture("assets/spritesheet_rock.png").await.unwrap();
-    let background_music = load_sound("assets/music/background_music.ogg")
-        .await
-        .unwrap();
+    static ASSETS_DIR: Dir = include_dir!("assets");
+    static MUSIC_DIR: Dir = include_dir!("assets/music");
+    
+    /*Load Assets*/
+    let tileset_png = ASSETS_DIR.get_file("tileset.png").unwrap();
+    let spritesheet_rock_png = ASSETS_DIR.get_file("spritesheet_rock.png").unwrap();
+    let background_music_ogg = MUSIC_DIR.get_file("background_music.ogg").unwrap();
+    let tileset = Texture2D::from_file_with_format(tileset_png.contents(), None);
+    let engineer_anim = Texture2D::from_file_with_format(spritesheet_rock_png.contents(), None);
+    let background_music = load_sound_from_bytes(background_music_ogg.contents()).await.unwrap();
+    /****************************/
+    
     /*Load JSON Tilemap*/
-    static PROJECT_DIR: Dir = include_dir!("assets");
-    let lib_rs = PROJECT_DIR.get_file("tiledmap.json").unwrap();
+    let lib_rs = ASSETS_DIR.get_file("tiledmap.json").unwrap();
     let body = lib_rs.contents_utf8().unwrap();
     let map_cast: tiledmap::TiledMap = serde_json::from_str(&body).unwrap();
     /****************************/
@@ -89,24 +100,27 @@ async fn main() {
         }
 
         let (mouse_x, mouse_y) = mouse_position();
-        if(is_mouse_button_released(MouseButton::Left))
+        if is_mouse_button_released(MouseButton::Left)
         {
             println!("mouse x: {}",mouse_x);
             println!("mouse y: {}",mouse_y);
             println!("camera_location X: {}",camera_movement_var);
             println!("camera_location Y: {}",camera_movement_var);
-            let xWorld = (mouse_x- macroquad::window::screen_width()/2.) +camera_movement_var;
-            let yWorld = (mouse_y- macroquad::window::screen_height()/2.) +camera_movement_var;
-            let mut worldVec = camera.screen_to_world(vec2(mouse_x,mouse_y));
-            println!("World X: {}",worldVec.x);
-            println!("World Y: {}",worldVec.y);
-            println!("Grid X: {}",world_to_grid_coords(worldVec).x-1.);
-            println!("Grid Y: {}",world_to_grid_coords(worldVec).y);
+            let world_vec = camera.screen_to_world(vec2(mouse_x,mouse_y));
+            println!("World X: {}",world_vec.x);
+            println!("World Y: {}",world_vec.y);
+            println!("Grid X: {}",world_to_grid_coords(world_vec).x-1.);
+            println!("Grid Y: {}",world_to_grid_coords(world_vec).y);
 
         }
 
         next_frame().await;
     }
+}
+
+pub fn get_pathfinder(tilemap: tiledmap::TiledMap) -> Pathfinder
+{
+    Pathfinder::new(tilemap)
 }
 
 pub fn get_tilemap_spritelist(
@@ -139,4 +153,44 @@ pub fn get_tilemap_spritelist(
 
 pub fn aspect_ratio() -> f32 {
     macroquad::window::screen_width() / macroquad::window::screen_height()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_collision_tile() {
+        static ASSETS_DIR: Dir = include_dir!("assets");
+        let lib_rs = ASSETS_DIR.get_file("tiledmap.json").unwrap();
+        let body = lib_rs.contents_utf8().unwrap();
+        let map_cast: tiledmap::TiledMap = serde_json::from_str(&body).unwrap();
+        
+        let pathfinder: Pathfinder = Pathfinder::new(map_cast);
+
+        assert_eq!(pathfinder.tile_is_walkable(0, 0), false);
+    }
+
+    #[test]
+    fn test_non_collision_tile() {
+        static ASSETS_DIR: Dir = include_dir!("assets");
+        let lib_rs = ASSETS_DIR.get_file("tiledmap.json").unwrap();
+        let body = lib_rs.contents_utf8().unwrap();
+        let map_cast: tiledmap::TiledMap = serde_json::from_str(&body).unwrap();
+        
+        let pathfinder: Pathfinder = Pathfinder::new(map_cast);
+
+        assert_eq!(pathfinder.tile_is_walkable(1,2), true);
+    }
+
+    #[test]
+    fn test_collision_tile_2() {
+        static ASSETS_DIR: Dir = include_dir!("assets");
+        let lib_rs = ASSETS_DIR.get_file("tiledmap.json").unwrap();
+        let body = lib_rs.contents_utf8().unwrap();
+        let map_cast: tiledmap::TiledMap = serde_json::from_str(&body).unwrap();
+        
+        let pathfinder: Pathfinder = Pathfinder::new(map_cast);
+
+        assert_eq!(pathfinder.tile_is_walkable(20,1), false);
+    }
 }

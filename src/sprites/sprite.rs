@@ -15,11 +15,11 @@ pub fn grid_to_world_coords(grid_pos: Vec2) -> Vec2 {
 
 pub fn world_to_grid_coords(world_pos: Vec2) -> Vec2 //In Testing
 {
-    let worldX=world_pos.x-8.0;
-    let worldY=world_pos.y+8.0;
+    let world_x=world_pos.x-8.0;
+    let world_y=world_pos.y+8.0;
     vec2(
-        (worldX + (2. * worldY)) / 64.,
-        (worldY/16.)-((worldX+ (2. * worldY)) / 64.),
+        (world_x + (2. * world_y)) / 64.,
+        (world_y/16.)-((world_x+ (2. * world_y)) / 64.),
     )
 }
 
