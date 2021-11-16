@@ -3,12 +3,11 @@ use macroquad::prelude::*;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
-
 pub struct Pathfinder {
     tilemap: tiledmap::TiledMap,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct TilePosition {
     pub x: i32,
     pub y: i32,
@@ -75,6 +74,18 @@ impl Pathfinder {
                     x: pos.x,
                     y: pos.y - 1,
                 });
+                if pos.x - 1 >= 0 {
+                    neighbours.push(TilePosition {
+                        x: pos.x - 1,
+                        y: pos.y - 1,
+                    });
+                }
+                if pos.x + 1 < self.tilemap.layers[0].width as i32 {
+                    neighbours.push(TilePosition {
+                        x: pos.x + 1,
+                        y: pos.y - 1,
+                    });
+                }
             }
             if pos.x - 1 >= 0 {
                 neighbours.push(TilePosition {
@@ -93,6 +104,19 @@ impl Pathfinder {
                     x: pos.x,
                     y: pos.y + 1,
                 });
+                
+                if pos.x - 1 >= 0 {
+                    neighbours.push(TilePosition {
+                        x: pos.x - 1,
+                        y: pos.y + 1,
+                    });
+                }
+                if pos.x + 1 < self.tilemap.layers[0].width as i32 {
+                    neighbours.push(TilePosition {
+                        x: pos.x + 1,
+                        y: pos.y + 1,
+                    });
+                }
             }
 
             for neighbour in neighbours {
@@ -120,7 +144,7 @@ impl Pathfinder {
             let tile_pos_key_entry: TilePositionKeyEntry = parent_for_key[&current_key].clone();
             current_key = tile_pos_key_entry.key;
             current_pos = tile_pos_key_entry.position;
-            path.push(current_pos.clone());
+            path.push(std::mem::take(&mut current_pos));
         }
         path.reverse();
 
@@ -132,8 +156,8 @@ mod tests {
     use super::*;
     use include_dir::include_dir;
     use include_dir::Dir;
-    use std::time::Instant;
     use std::time::Duration;
+    use std::time::Instant;
     #[test]
     fn pathfinding_large_test() {
         static PROJECT_DIR: Dir = include_dir!("assets");
@@ -161,10 +185,8 @@ mod tests {
 
         let path = pathfinder.find_path(TilePosition { x: 1, y: 1 }, TilePosition { x: 1, y: 1 });
 
-            assert_eq!(path.len(), 0);
-        
+        assert_eq!(path.len(), 0);
     }
-    
     #[test]
     fn pathfinding_invalid_to_invalid_test() {
         static PROJECT_DIR: Dir = include_dir!("assets");
@@ -177,7 +199,6 @@ mod tests {
 
         assert_eq!(path.len(), 0);
     }
-    
     #[test]
     fn pathfinding_valid_to_invalid_test() {
         static PROJECT_DIR: Dir = include_dir!("assets");
@@ -187,10 +208,8 @@ mod tests {
         let pathfinder: Pathfinder = Pathfinder::new(map_cast);
 
         let path = pathfinder.find_path(TilePosition { x: 1, y: 1 }, TilePosition { x: 0, y: 7 });
-        
         assert_eq!(path.len(), 0);
     }
-    
     #[test]
     fn pathfinding_invalid_to_valid_test() {
         static PROJECT_DIR: Dir = include_dir!("assets");
@@ -205,8 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn pathfinding_benchmark()
-    {
+    fn pathfinding_benchmark() {
         static PROJECT_DIR: Dir = include_dir!("assets");
         let lib_rs = PROJECT_DIR.get_file("tiledmap.json").unwrap();
         let body = lib_rs.contents_utf8().unwrap();
@@ -215,13 +233,12 @@ mod tests {
 
         let duration = bench_find_path(pathfinder);
         println!("Duration:{}ms", duration.as_millis());
-        assert!(duration.as_millis()< 10);
+        assert!(duration.as_millis() < 10);
     }
-    
-    fn bench_find_path(pathfinder: Pathfinder) -> Duration{
+
+    fn bench_find_path(pathfinder: Pathfinder) -> Duration {
         let start = Instant::now();
         pathfinder.find_path(TilePosition { x: 1, y: 1 }, TilePosition { x: 45, y: 45 });
         start.elapsed()
-        
     }
 }

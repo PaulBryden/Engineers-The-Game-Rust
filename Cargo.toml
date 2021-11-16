@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 nanoserde = "0.1"
-macroquad = "0.3"
+macroquad = "0.3.10"
 macroquad-platformer = "0.1"
 macroquad-particles = {version = "0.1", features = ["nanoserde"] }
 bitfield = "0.13"
