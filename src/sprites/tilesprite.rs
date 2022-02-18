@@ -11,6 +11,7 @@ pub struct TileSprite {
     pub width: f32,
     pub height: f32,
     pub layer: u32,
+    pub uuid: u32
 }
 
 

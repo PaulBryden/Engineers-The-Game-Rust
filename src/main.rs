@@ -47,7 +47,7 @@ async fn main() {
     /**************************/
 
     /*Generate Tiled Sprite List*/
-    let mut sprite_list_vector: Vec<SpriteID> = get_tilemap_spritelist(tileset, &tilemap_struct);
+    let mut sprite_map_store: std::collections::HashMap<u32,SpriteID> = get_tilemap_spritelist(tileset, &tilemap_struct);
     /*Create Pathfinder*/
     let pathfinder_local = get_pathfinder(tilemap_struct);
     /*******************/
@@ -55,7 +55,8 @@ async fn main() {
     let mut selected_entity: u32 = 0;
     //Add Engineer Sprite
     for _i in 0..8 {
-        let position = vec2(rand::gen_range(1, 10) as f32, rand::gen_range(1, 10) as f32);
+        let position = vec2(rand::gen_range::<f32>(1.0, 10.0) as f32, rand::gen_range::<f32>(1.0, 10.0) as f32);
+        let uuid: u32 = rand::rand();
         let engy_sprite: SpriteID = SpriteID::Engineer(Engineer {
             texture: engineer_anim,
             animated_sprite: AnimatedSprite::new(
@@ -72,9 +73,9 @@ async fn main() {
             x: grid_to_world_coords(position).x,
             y: grid_to_world_coords(position).y,
             current_path: Vec::new(),
-            uuid: rand::rand(),
+            uuid: uuid,
         });
-        sprite_list_vector.push(engy_sprite);
+        sprite_map_store.insert(uuid,engy_sprite);
     }
 
     play_sound(
@@ -85,6 +86,12 @@ async fn main() {
         },
     );
     let mut last_time_recorded: f64 = get_time();
+    let mut render_list: Vec<u32> = Vec::new();
+    for (uuid, _sprite) in sprite_map_store.iter()
+    {
+        render_list.push(*uuid);
+    }
+
     loop {
         clear_background(BLACK);
         let camera = Camera2D {
@@ -96,9 +103,8 @@ async fn main() {
             ..Default::default()
         };
         set_camera(&camera);
-
         //Z-Index Sorting for render ordering
-        sprite_list_vector.sort_by(|a, b| a.get_zindex().cmp(&b.get_zindex()));
+        render_list.sort_by(|a, b| sprite_map_store.get(a).unwrap().get_zindex().cmp(&sprite_map_store.get(b).unwrap().get_zindex()));
         /********************************/
 
         /*Get current game clock time*/
@@ -111,7 +117,6 @@ async fn main() {
         let mut world_vec: Vec2 = vec2(-1., -1.);
         let mut grid_coords: Vec2 = vec2(-1., -1.);
         let mut just_clicked: bool = false;
-        let mut selected_entity_index = 0;
         if is_mouse_button_released(MouseButton::Left) {
             world_vec = camera.screen_to_world(vec2(mouse_x, mouse_y));
             grid_coords = world_to_grid_coords(world_vec);
@@ -123,7 +128,8 @@ async fn main() {
             println!("Grid Y: {}", world_to_grid_coords(world_vec).y);
         }
 
-        for (i, sprite) in sprite_list_vector.iter_mut().enumerate() {
+        for uuid in &render_list {
+            let sprite = sprite_map_store.get_mut(&uuid).unwrap();
             match sprite {
                 SpriteID::Engineer(engineer_entity) => {
                     engineer_entity.update(current_time - last_time_recorded);
@@ -136,7 +142,6 @@ async fn main() {
                     if selected_entity == engineer_entity.uuid {
                         selected_texture_location =
                             vec2(engineer_entity.x - 1., engineer_entity.y - 5.);
-                        selected_entity_index = i;
                     }
                 }
                 SpriteID::Tile(_tile_entity) => {}
@@ -160,7 +165,7 @@ async fn main() {
         last_time_recorded = current_time;
 
         if !just_selected && (grid_coords.x > 0.) {
-            match &mut sprite_list_vector[selected_entity_index] {
+            match &mut sprite_map_store.get_mut(&selected_entity).unwrap() {
                 SpriteID::Engineer(engineer_entity) => {
                     let mut path = pathfinder_local.find_path(
                         TilePosition {
@@ -187,11 +192,12 @@ pub fn get_pathfinder(tilemap: tiledmap::TiledMap) -> Pathfinder {
     Pathfinder::new(tilemap)
 }
 
-pub fn get_tilemap_spritelist(tileset: Texture2D, tilemap: &tiledmap::TiledMap) -> Vec<SpriteID> {
-    let mut sprite_list: Vec<SpriteID> = Vec::new();
+pub fn get_tilemap_spritelist(tileset: Texture2D, tilemap: &tiledmap::TiledMap) -> std::collections::HashMap<u32,SpriteID> {
+    let mut sprite_store: std::collections::HashMap<u32,SpriteID> = std::collections::HashMap::new();
     for layer_num in 0 as usize..tilemap.layers.len() as usize {
         for y in 0 as u32..tilemap.height as u32 {
             for x in 0 as u32..tilemap.width as u32 {
+                let uuid: u32 = rand::rand();
                 let tile_sprite: SpriteID = SpriteID::Tile(TileSprite {
                     layer: layer_num as u32,
                     x: x,
@@ -203,12 +209,13 @@ pub fn get_tilemap_spritelist(tileset: Texture2D, tilemap: &tiledmap::TiledMap) 
                         - 1,
                     width: 64.0,
                     height: 32.0,
+                    uuid: uuid,
                 });
-                sprite_list.push(tile_sprite);
+                sprite_store.insert(uuid, tile_sprite);
             }
         }
     }
-    sprite_list
+    sprite_store
 }
 
 pub fn aspect_ratio() -> f32 {
