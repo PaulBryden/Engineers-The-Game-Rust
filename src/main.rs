@@ -64,15 +64,16 @@ async fn main() {
                 64,
                 &[Animation {
                     name: "idle".to_string(),
-                    row: 1,
-                    frames: 5,
-                    fps: 11,
+                    row: 3,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
                 }],
                 true,
             ),
             x: grid_to_world_coords(position).x,
             y: grid_to_world_coords(position).y,
             current_path: Vec::new(),
+            previous_position: TilePosition{x:position.x.floor() as i32,y:position.y.floor() as i32},
             uuid: uuid,
         });
         sprite_map_store.insert(uuid,engy_sprite);
@@ -141,7 +142,7 @@ async fn main() {
                     }
                     if selected_entity == engineer_entity.uuid {
                         selected_texture_location =
-                            vec2(engineer_entity.x - 1., engineer_entity.y - 5.);
+                            vec2(engineer_entity.x, engineer_entity.y - 5.);
                     }
                 }
                 SpriteID::Tile(_tile_entity) => {}
@@ -156,7 +157,7 @@ async fn main() {
                 selected_texture_location.y,
                 color::WHITE,
                 DrawTextureParams {
-                    dest_size: Some(vec2(58.0, 64.0)),
+                    dest_size: Some(vec2(64.0, 64.0)),
                     source: Some(Rect::new(0., 0., 64., 64.)),
                     ..Default::default()
                 },
