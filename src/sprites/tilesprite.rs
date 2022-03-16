@@ -18,10 +18,10 @@ pub struct TileSprite {
 impl Sprite for TileSprite {
     
     fn get_zindex(&self) -> u32 {
-        if self.layer == 1 {
+        if self.layer == 1 ||  self.frame_number>15{
             0
         } else {
-            1 + ((self.x + self.y)*2) as u32
+            2 + ((self.x + self.y)*2) as u32
         }
     }
     fn get_tile_pos(&self) -> Vec2 {

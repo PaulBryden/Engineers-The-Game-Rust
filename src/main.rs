@@ -109,8 +109,8 @@ async fn main() {
                 }],
                 true,
             ),
-            x: grid_to_world_coords(position).x,
-            y: grid_to_world_coords(position).y,
+            x: grid_to_world_coords(position.floor()).x,
+            y: grid_to_world_coords(position.floor()).y,
             current_path: Vec::new(),
             previous_position: TilePosition{x:position.x.floor() as i32,y:position.y.floor() as i32},
             uuid: uuid,
@@ -144,7 +144,28 @@ async fn main() {
         };
         set_camera(&camera);
         //Z-Index Sorting for render ordering
-        render_list.sort_by(|a, b| sprite_map_store.get(a).unwrap().get_zindex().cmp(&sprite_map_store.get(b).unwrap().get_zindex()));
+        render_list.sort_by(|a, b| {let ordering = sprite_map_store.get(a).unwrap().get_zindex().cmp(&sprite_map_store.get(b).unwrap().get_zindex()); if ordering==std::cmp::Ordering::Equal {
+            let mut a_val = 0;
+            let mut b_val = 0;
+           match
+            sprite_map_store.get(a).unwrap()
+            {
+                SpriteID::Tile(sprite_move_request) => a_val=1,
+                Default => b_val=b_val,
+            }
+            match
+             sprite_map_store.get(b).unwrap()
+             {
+                 SpriteID::Tile(sprite_move_request) => b_val=1,
+                 Default => b_val=b_val,
+             }
+             return a_val.cmp(&b_val);
+        }
+        else
+        {
+            return ordering;
+        }
+    });
         /********************************/
 
         /*Get current game clock time*/

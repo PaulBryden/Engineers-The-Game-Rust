@@ -120,7 +120,7 @@ impl Engineer {
 impl Sprite for Engineer {
     fn get_zindex(&self) -> u32 {
         let grid_coords = self.get_tile_pos();
-        2 + ((grid_coords.x + grid_coords.y) * 2.) as u32
+        1 + ((grid_coords.x + grid_coords.y) * 2.) as u32
     }
     fn get_tile_pos(&self) -> Vec2 {
         world_to_grid_coords(vec2(self.x + 8. as f32, self.y + 24. as f32))
