@@ -14,11 +14,15 @@ mod sprites {
     pub mod sprite;
     pub mod tilesprite;
 }
+mod model {
+    pub mod requests;
+}
 pub mod tiledmap;
 use pathfinding::pathfinder::{Pathfinder, TilePosition};
 use sprites::engineersprite::Engineer;
 use sprites::sprite::{grid_to_world_coords, world_to_grid_coords, Sprite, SpriteID};
 use sprites::tilesprite::TileSprite;
+use model::requests::*;
 #[macroquad::main("engineers")]
 async fn main() {
     static ASSETS_DIR: Dir = include_dir!("assets");
@@ -63,8 +67,43 @@ async fn main() {
                 64,
                 64,
                 &[Animation {
-                    name: "idle".to_string(),
+                    name: "N".to_string(),
+                    row: 0,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
+                },Animation {
+                    name: "NW".to_string(),
+                    row: 1,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
+                },Animation {
+                    name: "W".to_string(),
+                    row: 2,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
+                },Animation {
+                    name: "SW".to_string(),
                     row: 3,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
+                },Animation {
+                    name: "S".to_string(),
+                    row: 4,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
+                },Animation {
+                    name: "SE".to_string(),
+                    row: 5,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
+                },Animation {
+                    name: "E".to_string(),
+                    row: 6,
+                    frames: 17, //18 frames including original frame which we want to skip.
+                    fps: 30,
+                },Animation {
+                    name: "NE".to_string(),
+                    row: 7,
                     frames: 17, //18 frames including original frame which we want to skip.
                     fps: 30,
                 }],
@@ -133,7 +172,7 @@ async fn main() {
             let sprite = sprite_map_store.get_mut(&uuid).unwrap();
             match sprite {
                 SpriteID::Engineer(engineer_entity) => {
-                    engineer_entity.update(current_time - last_time_recorded);
+                    engineer_entity.update_view(current_time - last_time_recorded);
                     if just_clicked {
                         if engineer_entity.is_within_bounds(world_vec) {
                             just_selected = true;

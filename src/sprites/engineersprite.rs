@@ -13,6 +13,40 @@ pub struct Engineer {
 }
 
 impl Engineer {
+    pub fn get_animation_direction(current_position: &TilePosition, next_position: &TilePosition) -> usize
+    {
+        let x_differential= current_position.x-next_position.x;
+        let y_differential = current_position.y-next_position.y;
+        if x_differential==1 && y_differential==1
+        {
+            return 0;
+        }else if x_differential==1 && y_differential==0
+        {
+            return 1;
+        }else if x_differential==1 && y_differential==-1
+        {
+            return 2;
+        }else if x_differential==0 && y_differential==-1
+        {
+            return 3;
+        }else if x_differential==-1 && y_differential==-1
+        {
+            return 4;
+        }else if x_differential==-1 && y_differential==0
+        {
+            return 5;
+        }else if x_differential==-1 && y_differential==1
+        {
+            return 6;
+        }else if x_differential==0 && y_differential==1
+        {
+            return 7;
+        }
+        else
+        {
+            return 3;
+        }
+    }
     pub fn is_within_bounds(&self, coords: Vec2) -> bool {
         if coords.x < self.x + 58.
             && coords.x > self.x
@@ -23,8 +57,9 @@ impl Engineer {
         }
         return false;
     }
-    pub fn update(&mut self, time: f64) {
+    pub fn update_view(&mut self, time: f64) {
         if self.current_path.len() > 0 {
+            self.animated_sprite.set_animation(Engineer::get_animation_direction(&self.previous_position, &self.current_path[0]));
             let target = self.current_path[0];
             let speed = 75.; //units per second
             let mut speed_x = speed; //units per second
@@ -73,9 +108,14 @@ impl Engineer {
         }
     }
     pub fn update_path(&mut self, path: Vec<TilePosition>) {
+        if self.current_path.len() > 0 {
+            self.previous_position = TilePosition{x:self.get_tile_pos().x as i32, y:self.get_tile_pos().y as i32};
+        }
         self.current_path = path;
     }
 }
+
+
 
 impl Sprite for Engineer {
     fn get_zindex(&self) -> u32 {
