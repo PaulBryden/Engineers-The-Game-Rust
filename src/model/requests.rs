@@ -7,10 +7,34 @@ pub struct SpriteMoveRequest {
     pub sprite_uuid: u32,
     pub position: TilePosition,
 }
+#[derive(Copy, Clone)]
+pub enum SpriteType {
+    Engineer,
+}
+
+#[derive(Copy, Clone)]
+pub struct SpriteCreateRequest {
+    pub tick: u32,
+    pub sprite_uuid: u32,
+    pub sprite_type: SpriteType,
+    pub position: TilePosition,
+}
 
 #[derive(Copy, Clone)]
 pub enum Request {
     SpriteMove(SpriteMoveRequest),
+    SpriteCreate(SpriteCreateRequest),
+}
+pub trait RequestImpl {
+    fn get_tick(&self) -> u32;
+}
+impl RequestImpl for Request {
+    fn get_tick(&self) -> u32 {
+        match self {
+            Request::SpriteMove(sprite_move_request) => sprite_move_request.tick,
+            Request::SpriteCreate(sprite_create_request) => sprite_create_request.tick,
+        }
+    }
 }
 
 #[derive(Clone, Default)]
@@ -28,25 +52,19 @@ impl RequestQueue {
     }
 
     pub fn GetTickOfParticularRequest(request: &Request) -> u32 {
-        let mut tick = 0;
-        match request {
-            Request::SpriteMove(sprite_move_request) => tick = sprite_move_request.tick,
-        }
-        return tick;
+        return request.get_tick();
     }
-    pub fn GetCopyOfNextRequestToBeProcessed(&self) -> Option<Request> {
-        if self.requests.len() > 0 {
-            return Some(self.requests[0]);
-        } else {
-            return None;
+    pub fn GetRequestsOfParticularTick(&self, tick: u32) -> Vec<Request> {
+        let mut requests = Vec::new();
+        for request in &self.requests {
+            if (request.get_tick() == tick) {
+                requests.push(request.clone())
+            }
         }
+        return requests;
     }
-    pub fn PopNextRequestToBeProcessed(&mut self) -> Option<Request> {
-        if self.requests.len() > 0 {
-            Some(self.requests.remove(0))
-        } else {
-            return None;
-        }
+    pub fn PurgeRequestsOlderThanTick(&mut self, tick: u32) {
+        self.requests=self.requests.clone().into_iter().filter(|w| w.get_tick()>=tick).collect::<Vec<_>>();
     }
 
     pub fn GetNumberOfRequests(&self) -> usize {
@@ -75,31 +93,14 @@ mod tests {
         request_queue.AddRequest(request_2);
         assert_eq!(request_queue.GetNumberOfRequests() == 1, true);
         request_queue.AddRequest(request_1);
-        match request_queue.GetCopyOfNextRequestToBeProcessed().unwrap() {
-            Request::SpriteMove(sprite_move_request) => {
-                uuid_holding_variable_1 = sprite_move_request.tick
-            }
-        }
-        match request_1 {
-            Request::SpriteMove(sprite_move_request) => {
-                uuid_holding_variable_2 = sprite_move_request.tick
-            }
-        }
-        assert_eq!(uuid_holding_variable_1 == uuid_holding_variable_2, true);
-
+        let mut returned_requests=request_queue.GetRequestsOfParticularTick(request_1.get_tick());
+        assert_eq!(returned_requests.len() == 1, true);
+        assert_eq!(returned_requests[0].get_tick() == 13, true);
         assert_eq!(request_queue.GetNumberOfRequests() == 2, true);
-        request_queue.PopNextRequestToBeProcessed();
+        request_queue.PurgeRequestsOlderThanTick(14);
         assert_eq!(request_queue.GetNumberOfRequests() == 1, true);
-        match request_queue.GetCopyOfNextRequestToBeProcessed().unwrap() {
-            Request::SpriteMove(sprite_move_request) => {
-                uuid_holding_variable_1 = sprite_move_request.tick
-            }
-        }
-        match request_2 {
-            Request::SpriteMove(sprite_move_request) => {
-                uuid_holding_variable_2 = sprite_move_request.tick
-            }
-        }
-        assert_eq!(uuid_holding_variable_1 == uuid_holding_variable_2, true);
+        returned_requests=request_queue.GetRequestsOfParticularTick(request_2.get_tick());
+        assert_eq!(returned_requests.len() == 1, true);
+        assert_eq!(returned_requests[0].get_tick() == request_2.get_tick(), true);
     }
 }

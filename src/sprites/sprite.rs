@@ -6,6 +6,7 @@ pub trait Sprite {
     fn get_tile_pos(&self) -> Vec2;
     fn draw(&mut self);
 }
+#[derive(Clone)]
 pub enum SpriteID {
     Engineer(Engineer),
     Tile(TileSprite)

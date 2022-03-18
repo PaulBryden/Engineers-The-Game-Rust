@@ -3,6 +3,7 @@ use macroquad::{
     prelude::*,
 };
 use super::sprite::{Sprite};
+#[derive(Clone)]
 pub struct TileSprite {
     pub texture: Texture2D,
     pub frame_number: u32,

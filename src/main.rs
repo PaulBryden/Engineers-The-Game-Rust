@@ -1,3 +1,5 @@
+use crate::model::gamemanager::GameState;
+use crate::model::gamemanager::GameManager;
 use include_dir::include_dir;
 use include_dir::Dir;
 use macroquad::prelude::*;
@@ -16,6 +18,7 @@ mod sprites {
 }
 mod model {
     pub mod requests;
+    pub mod gamemanager;
 }
 pub mod tiledmap;
 use pathfinding::pathfinder::{Pathfinder, TilePosition};
@@ -52,8 +55,15 @@ async fn main() {
 
     /*Generate Tiled Sprite List*/
     let mut sprite_map_store: std::collections::HashMap<u32,SpriteID> = get_tilemap_spritelist(tileset, &tilemap_struct);
-    /*Create Pathfinder*/
+    let mut render_list: Vec<u32> = Vec::new();
+    for (uuid, _sprite) in sprite_map_store.iter()
+    {
+        render_list.push(*uuid);
+    }
+    let game_state: GameState = GameState{sprite_map:sprite_map_store, sprite_uuid_list:render_list, selected_entity: 0};
     let pathfinder_local = get_pathfinder(tilemap_struct);
+    let mut game_manager: GameManager = GameManager{requests: RequestQueue::default(), game_state_history: std::collections::HashMap::new(), current_game_state: game_state, last_tick: 0, pathfinder: pathfinder_local};
+    /*Create Pathfinder*/
     /*******************/
 
     let mut selected_entity: u32 = 0;
@@ -114,8 +124,11 @@ async fn main() {
             current_path: Vec::new(),
             previous_position: TilePosition{x:position.x.floor() as i32,y:position.y.floor() as i32},
             uuid: uuid,
+            selected: false,
+            selected_texture: selected_texture
         });
-        sprite_map_store.insert(uuid,engy_sprite);
+        game_manager.current_game_state.sprite_map.insert(uuid,engy_sprite);
+        game_manager.current_game_state.sprite_uuid_list.push(uuid);
     }
 
     play_sound(
@@ -125,13 +138,9 @@ async fn main() {
             volume: 0.1,
         },
     );
-    let mut last_time_recorded: f64 = get_time();
-    let mut render_list: Vec<u32> = Vec::new();
-    for (uuid, _sprite) in sprite_map_store.iter()
-    {
-        render_list.push(*uuid);
-    }
-
+    let mut last_tick_time: f64 = get_time();
+    let mut tick_count =0;
+    game_manager.current_game_state.process_tick(tick_count);
     loop {
         clear_background(BLACK);
         let camera = Camera2D {
@@ -144,107 +153,34 @@ async fn main() {
         };
         set_camera(&camera);
         //Z-Index Sorting for render ordering
-        render_list.sort_by(|a, b| {let ordering = sprite_map_store.get(a).unwrap().get_zindex().cmp(&sprite_map_store.get(b).unwrap().get_zindex()); if ordering==std::cmp::Ordering::Equal {
-            let mut a_val = 0;
-            let mut b_val = 0;
-           match
-            sprite_map_store.get(a).unwrap()
-            {
-                SpriteID::Tile(sprite_move_request) => a_val=1,
-                Default => b_val=b_val,
-            }
-            match
-             sprite_map_store.get(b).unwrap()
-             {
-                 SpriteID::Tile(sprite_move_request) => b_val=1,
-                 Default => b_val=b_val,
-             }
-             return a_val.cmp(&b_val);
-        }
-        else
-        {
-            return ordering;
-        }
-    });
+        
         /********************************/
 
         /*Get current game clock time*/
         let current_time = get_time();
 
-        let mut selected_texture_location: Vec2 = vec2(-1., -1.);
-
         let (mouse_x, mouse_y) = mouse_position();
-        let mut just_selected: bool = false;
         let mut world_vec: Vec2 = vec2(-1., -1.);
         let mut grid_coords: Vec2 = vec2(-1., -1.);
-        let mut just_clicked: bool = false;
         if is_mouse_button_released(MouseButton::Left) {
             world_vec = camera.screen_to_world(vec2(mouse_x, mouse_y));
             grid_coords = world_to_grid_coords(world_vec);
-            just_clicked = true;
-
+            game_manager.mouse_clicked(world_vec);
             println!("World X: {}", world_vec.x);
             println!("World Y: {}", world_vec.y);
             println!("Grid X: {}", world_to_grid_coords(world_vec).x);
             println!("Grid Y: {}", world_to_grid_coords(world_vec).y);
         }
 
-        for uuid in &render_list {
-            let sprite = sprite_map_store.get_mut(&uuid).unwrap();
-            match sprite {
-                SpriteID::Engineer(engineer_entity) => {
-                    engineer_entity.update_view(current_time - last_time_recorded);
-                    if just_clicked {
-                        if engineer_entity.is_within_bounds(world_vec) {
-                            just_selected = true;
-                            selected_entity = engineer_entity.uuid;
-                        }
-                    }
-                    if selected_entity == engineer_entity.uuid {
-                        selected_texture_location =
-                            vec2(engineer_entity.x, engineer_entity.y - 5.);
-                    }
-                }
-                SpriteID::Tile(_tile_entity) => {}
-            };
-            sprite.draw(); //Draw all sprites in Sprite List
+
+        while(current_time-last_tick_time>=0.04)
+        {
+            tick_count=tick_count+1;
+            game_manager.process_tick(tick_count);
+            last_tick_time=last_tick_time+0.04;
         }
+        game_manager.render();
 
-        if selected_entity != 0 {
-            draw_texture_ex(
-                selected_texture,
-                selected_texture_location.x,
-                selected_texture_location.y,
-                color::WHITE,
-                DrawTextureParams {
-                    dest_size: Some(vec2(64.0, 64.0)),
-                    source: Some(Rect::new(0., 0., 64., 64.)),
-                    ..Default::default()
-                },
-            );
-        }
-        last_time_recorded = current_time;
-
-        if !just_selected && (grid_coords.x > 0.) {
-            match &mut sprite_map_store.get_mut(&selected_entity).unwrap() {
-                SpriteID::Engineer(engineer_entity) => {
-                    let mut path = pathfinder_local.find_path(
-                        TilePosition {
-                            x: engineer_entity.get_tile_pos().x as i32,
-                            y: engineer_entity.get_tile_pos().y as i32,
-                        },
-                        TilePosition {
-                            x: (grid_coords.x - 1.0) as i32,
-                            y: (grid_coords.y - 0.5) as i32,
-                        },
-                    );
-
-                    engineer_entity.update_path(std::mem::take(&mut path))
-                }
-
-                SpriteID::Tile(_tile) => {}
-            }
-        }
         next_frame().await;
     }
 }

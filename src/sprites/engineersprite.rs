@@ -2,14 +2,17 @@ use super::super::pathfinding::pathfinder::TilePosition;
 use super::sprite::{grid_to_world_coords, world_to_grid_coords, Sprite};
 use macroquad::{color, experimental::animation::AnimatedSprite, prelude::*};
 
+#[derive(Clone)]
 pub struct Engineer {
     pub texture: Texture2D,
     pub animated_sprite: AnimatedSprite,
+    pub selected_texture: Texture2D,
     pub x: f32,
     pub y: f32,
     pub current_path: Vec<TilePosition>,
     pub previous_position: TilePosition,
     pub uuid: u32,
+    pub selected: bool
 }
 
 impl Engineer {
@@ -57,11 +60,11 @@ impl Engineer {
         }
         return false;
     }
-    pub fn update_view(&mut self, time: f64) {
+    pub fn update_view(&mut self, time: u32) {
         if self.current_path.len() > 0 {
             self.animated_sprite.set_animation(Engineer::get_animation_direction(&self.previous_position, &self.current_path[0]));
             let target = self.current_path[0];
-            let speed = 75.; //units per second
+            let speed = 3.; //units per second
             let mut speed_x = speed; //units per second
             let mut speed_y = speed/2.; //units per second
             let world_target = grid_to_world_coords(vec2(target.x as f32, target.y as f32));
@@ -127,7 +130,6 @@ impl Sprite for Engineer {
     }
     fn draw(&mut self) {
         self.animated_sprite.update();
-
         draw_texture_ex(
             self.texture,
             self.x,
@@ -138,6 +140,20 @@ impl Sprite for Engineer {
                 dest_size: Some(self.animated_sprite.frame().dest_size),
                 ..Default::default()
             },
-        )
+        );
+        if(self.selected)
+        {
+            draw_texture_ex(
+                self.selected_texture,
+                self.x,
+                self.y,
+                color::WHITE,
+                DrawTextureParams {
+                    dest_size: Some(vec2(64.0, 64.0)),
+                    source: Some(Rect::new(0., 0., 64., 64.)),
+                    ..Default::default()
+                },
+            );
+        }
     }
 }
