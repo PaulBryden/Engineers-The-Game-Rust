@@ -71,64 +71,8 @@ async fn main() {
     for _i in 0..8 {
         let position = vec2(rand::gen_range::<f32>(1.0, 10.0) as f32, rand::gen_range::<f32>(1.0, 10.0) as f32);
         let uuid: u32 = rand::rand();
-        let engy_sprite: SpriteID = SpriteID::Engineer(Engineer {
-            texture: engineer_anim,
-            animated_sprite: AnimatedSprite::new(
-                64,
-                64,
-                &[Animation {
-                    name: "N".to_string(),
-                    row: 0,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                },Animation {
-                    name: "NW".to_string(),
-                    row: 1,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                },Animation {
-                    name: "W".to_string(),
-                    row: 2,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                },Animation {
-                    name: "SW".to_string(),
-                    row: 3,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                },Animation {
-                    name: "S".to_string(),
-                    row: 4,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                },Animation {
-                    name: "SE".to_string(),
-                    row: 5,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                },Animation {
-                    name: "E".to_string(),
-                    row: 6,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                },Animation {
-                    name: "NE".to_string(),
-                    row: 7,
-                    frames: 17, //18 frames including original frame which we want to skip.
-                    fps: 30,
-                }],
-                true,
-            ),
-            x: grid_to_world_coords(position.floor()).x,
-            y: grid_to_world_coords(position.floor()).y,
-            current_path: Vec::new(),
-            previous_position: TilePosition{x:position.x.floor() as i32,y:position.y.floor() as i32},
-            uuid: uuid,
-            selected: false,
-            selected_texture: selected_texture
-        });
-        game_manager.current_game_state.sprite_map.insert(uuid,engy_sprite);
-        game_manager.current_game_state.sprite_uuid_list.push(uuid);
+        let request: Request = Request::SpriteCreate(SpriteCreateRequest {tick:40 - position.x as u32, sprite_uuid: uuid, position: TilePosition{x: position.x as i32,y: position.y as i32}, sprite_type: SpriteType::Engineer});
+        game_manager.addRequest(request);
     }
 
     play_sound(
@@ -173,11 +117,11 @@ async fn main() {
         }
 
 
-        while(current_time-last_tick_time>=0.04)
+        while(current_time-last_tick_time>=0.05)
         {
             tick_count=tick_count+1;
             game_manager.process_tick(tick_count);
-            last_tick_time=last_tick_time+0.04;
+            last_tick_time=last_tick_time+0.05;
         }
         game_manager.render();
 

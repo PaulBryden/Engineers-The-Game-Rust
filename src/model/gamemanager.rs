@@ -6,7 +6,11 @@ use crate::Pathfinder;
 use crate::SpriteMoveRequest;
 use crate::TilePosition;
 use crate::Vec2;
+use crate::sprites::engineersprite::Engineer;
 use macroquad::prelude::draw_texture_ex;
+use include_dir::include_dir;
+use include_dir::Dir;
+use macroquad::texture::Texture2D;
 
 type SpriteMap = std::collections::HashMap<u32, SpriteID>;
 type Tick = u32;
@@ -81,7 +85,7 @@ impl GameState {
             let sprite = self.sprite_map.get_mut(&uuid).unwrap();
             match sprite {
                 SpriteID::Engineer(engineer_entity) => {
-                    engineer_entity.update_view(1); //each tick is 20ms
+                    engineer_entity.tick(1); //each tick is 20ms
                 }
                 SpriteID::Tile(_tile_entity) => {}
             }
@@ -172,9 +176,20 @@ impl GameManager {
                     _default => {}
                 }
             }
-            Request::SpriteCreate(request) => {}
+            Request::SpriteCreate(request) => {
+                match request.sprite_type {
+                    crate::model::requests::SpriteType::Engineer =>
+                    {
+                        let engy_sprite =  Engineer::new(request.position.x, request.position.y, 64, 64, Texture2D::from_file_with_format(include_dir!("assets").get_file("spritesheet_rock.png").unwrap().contents(),None), request.sprite_uuid, Texture2D::from_file_with_format(include_dir!("assets").get_file("selected.png").unwrap().contents(), None));
+                        self.current_game_state.sprite_map.insert(request.sprite_uuid, SpriteID::Engineer(engy_sprite));
+                        self.current_game_state.sprite_uuid_list.push(request.sprite_uuid);
+                        
+                    }
+                    _default => {}
+            }
         }
     }
+}
 
     pub fn render(&mut self) {
         self.current_game_state.render();

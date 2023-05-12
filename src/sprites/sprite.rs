@@ -33,6 +33,7 @@ fn draw(&mut self) {
         SpriteID::Tile(tile_entity) => tile_entity.draw()
     }
  }
+
 }
 
 pub fn grid_to_world_coords(grid_pos: Vec2) -> Vec2 {
