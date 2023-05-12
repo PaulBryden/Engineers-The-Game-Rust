@@ -141,7 +141,7 @@ impl GameManager {
         self.current_game_state.process_tick(tick);
         self.game_state_history
             .insert(tick, self.current_game_state.clone());
-        if(tick>47)
+        if (tick > 47)
         {
             self.game_state_history.remove(&(tick - 47));
         }

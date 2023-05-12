@@ -2,36 +2,70 @@ use super::super::tiledmap;
 use macroquad::prelude::*;
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::collections::BinaryHeap;
+use std::cmp::Ordering;
 
+// Pathfinder struct that contains a tilemap
 pub struct Pathfinder {
     tilemap: tiledmap::TiledMap,
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+// TilePosition struct that represents the position of a tile on the map
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct TilePosition {
     pub x: i32,
     pub y: i32,
 }
 
+// State struct that represents the cost and position of a tile
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct State {
+    cost: i32,
+    position: TilePosition,
+}
+
+// Implement Ord trait for State to allow it to be used in a BinaryHeap
+impl Ord for State {
+    fn cmp(&self, other: &State) -> Ordering {
+        other.cost.cmp(&self.cost)
+    }
+}
+
+// Implement PartialOrd trait for State to allow it to be used in a BinaryHeap
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &State) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+// Heuristic function that calculates the Manhattan distance between two points
+pub fn heuristic(a: &TilePosition, b: &TilePosition) -> i32 {
+    (b.x - a.x).abs() + (b.y - a.y).abs()
+}
+
+// TilePositionKeyEntry struct that represents the position and key of a tile
 #[derive(Debug, Clone)]
 pub struct TilePositionKeyEntry {
     position: TilePosition,
     key: String,
 }
 
+// Function that converts a tile position to a string key
 pub fn tile_position_to_key(x: i32, y: i32) -> String {
     [x.to_string(), y.to_string()].join("x")
 }
 
 impl Pathfinder {
+    // Constructor for Pathfinder
     pub fn new(map: tiledmap::TiledMap) -> Pathfinder {
         Pathfinder { tilemap: map }
     }
+
+    // Method that checks if a tile is walkable
     pub fn tile_is_walkable(&self, x: i32, y: i32) -> bool {
         if x >= 0 && y >= 0 {
             //remember to decrement the tile number.
-            !self.tilemap.tilesets[0].tiles
-                [self.tilemap.layers[0].get_tile_at(x as u32, y as u32) as usize - 1 as usize]
+            !self.tilemap.tilesets[0].tiles[self.tilemap.layers[0].get_tile_at(x as u32, y as u32) as usize - 1 as usize]
                 .properties[0]
                 .value
         } else {
@@ -39,118 +73,99 @@ impl Pathfinder {
         }
     }
 
-    pub fn find_path(&self, start: TilePosition, target: TilePosition) -> Vec<TilePosition> {
-        let mut path: Vec<TilePosition> = Vec::new();
-        if !self.tile_is_walkable(target.x, target.y) {
+    // Method that returns the neighbours of a given tile position
+    pub fn get_neighbours(&self, a: &TilePosition) -> Vec<TilePosition> {
+        let mut neighbours = Vec::new();
+        neighbours.push(TilePosition { x: a.x - 1, y: a.y - 1 });
+        neighbours.push(TilePosition { x: a.x - 1, y: a.y });
+        neighbours.push(TilePosition { x: a.x - 1, y: a.y + 1 });
+        neighbours.push(TilePosition { x: a.x, y: a.y - 1 });
+        neighbours.push(TilePosition { x: a.x, y: a.y });
+        neighbours.push(TilePosition { x: a.x, y: a.y + 1 });
+        neighbours.push(TilePosition { x: a.x + 1, y: a.y - 1 });
+        neighbours.push(TilePosition { x: a.x + 1, y: a.y });
+        neighbours.push(TilePosition { x: a.x + 1, y: a.y + 1 });
+        neighbours
+    }
+
+    // Heuristic function that calculates the Manhattan distance between two points
+    fn heuristic(a: &TilePosition, b:&TilePosition) -> i32{
+        (b.x-a.x).abs()+(b.y-a.y).abs()
+    }
+
+    // Method that finds the shortest path between two tiles using the A* algorithm
+    pub fn find_path(&self,start :TilePosition,target :TilePosition)->Vec<TilePosition>{
+        let mut path :Vec<TilePosition>=Vec::new();
+        if !self.tile_is_walkable(target.x,target.y){
             return path;
         }
-        if !self.tile_is_walkable(start.x, start.y) {
+        if !self.tile_is_walkable(start.x,start.y){
             return path;
         }
-        let mut queue: VecDeque<TilePosition> = VecDeque::new();
-        let mut parent_for_key: HashMap<String, TilePositionKeyEntry> = HashMap::new();
 
-        let start_key = tile_position_to_key(start.x, start.y);
-        let target_key = tile_position_to_key(target.x, target.y);
-        parent_for_key.insert(
-            start_key.clone(),
-            TilePositionKeyEntry {
-                key: "".to_string(),
-                position: TilePosition { x: 0, y: 0 },
-            },
-        );
-        queue.push_back(start);
-        while queue.len() > 0 {
-            let pos: TilePosition = queue.pop_front().unwrap();
-            let current_key = tile_position_to_key(pos.x, pos.y);
+        let mut heap = BinaryHeap::new();
+        heap.push(State{cost :0 ,position:start});
 
-            if current_key == target_key {
-                break;
-            }
+    let mut parent_for_key: HashMap<String, TilePositionKeyEntry> = HashMap::new();
+    let mut cost_so_far = HashMap::new();
+    cost_so_far.insert(start, 0);
 
-            let mut neighbours: Vec<TilePosition> = Vec::new();
-            if pos.y - 1 >= 0 {
-                neighbours.push(TilePosition {
-                    x: pos.x,
-                    y: pos.y - 1,
-                });
-                if pos.x - 1 >= 0 {
-                    neighbours.push(TilePosition {
-                        x: pos.x - 1,
-                        y: pos.y - 1,
-                    });
-                }
-                if pos.x + 1 < self.tilemap.layers[0].width as i32 {
-                    neighbours.push(TilePosition {
-                        x: pos.x + 1,
-                        y: pos.y - 1,
-                    });
-                }
-            }
-            if pos.x - 1 >= 0 {
-                neighbours.push(TilePosition {
-                    x: pos.x - 1,
-                    y: pos.y,
-                });
-            }
-            if pos.x + 1 < self.tilemap.layers[0].width as i32 {
-                neighbours.push(TilePosition {
-                    x: pos.x + 1,
-                    y: pos.y,
-                });
-            }
-            if pos.y + 1 < self.tilemap.layers[0].height as i32 {
-                neighbours.push(TilePosition {
-                    x: pos.x,
-                    y: pos.y + 1,
-                });
-                
-                if pos.x - 1 >= 0 {
-                    neighbours.push(TilePosition {
-                        x: pos.x - 1,
-                        y: pos.y + 1,
-                    });
-                }
-                if pos.x + 1 < self.tilemap.layers[0].width as i32 {
-                    neighbours.push(TilePosition {
-                        x: pos.x + 1,
-                        y: pos.y + 1,
-                    });
-                }
-            }
+    let start_key = tile_position_to_key(start.x, start.y);
+    let target_key = tile_position_to_key(target.x, target.y);
+    parent_for_key.insert(
+        start_key.clone(),
+        TilePositionKeyEntry {
+            key: "".to_string(),
+            position: TilePosition { x: 0, y: 0 },
+        },
+    );
 
-            for neighbour in neighbours {
-                if !self.tile_is_walkable(neighbour.x, neighbour.y) {
-                    continue;
-                }
-                let key = tile_position_to_key(neighbour.x, neighbour.y);
-                if parent_for_key.contains_key(&key) {
-                    continue;
-                }
+    while let Some(State { cost, position }) = heap.pop() {
+        if position == target {
+            break;
+        }
+
+        let current_key = tile_position_to_key(position.x, position.y);
+        let neighbours = self.get_neighbours(&position);
+
+        for neighbour in neighbours {
+            if !self.tile_is_walkable(neighbour.x, neighbour.y) {
+                continue;
+            }
+            let new_cost = cost_so_far[&position] + 1;
+            if !cost_so_far.contains_key(&neighbour) || new_cost < cost_so_far[&neighbour] {
+                cost_so_far.insert(neighbour, new_cost);
+                let priority = new_cost + heuristic(&neighbour, &target);
+                heap.push(State {
+                    cost: priority,
+                    position: neighbour,
+                });
                 parent_for_key.insert(
-                    key,
+                    tile_position_to_key(neighbour.x, neighbour.y),
                     TilePositionKeyEntry {
                         key: current_key.clone(),
                         position: neighbour,
                     },
                 );
-                queue.push_back(neighbour);
             }
         }
-        let mut current_key = target_key;
-        let mut current_pos;
-
-        while current_key != start_key {
-            let tile_pos_key_entry: TilePositionKeyEntry = parent_for_key[&current_key].clone();
-            current_key = tile_pos_key_entry.key;
-            current_pos = tile_pos_key_entry.position;
-            path.push(std::mem::take(&mut current_pos));
-        }
-        path.reverse();
-
-        return path;
     }
+
+    let mut current_key = target_key;
+    let mut current_pos;
+
+    while current_key != start_key {
+        let tile_pos_key_entry: TilePositionKeyEntry = parent_for_key[&current_key].clone();
+        current_key = tile_pos_key_entry.key;
+        current_pos = tile_pos_key_entry.position;
+        path.push(std::mem::take(&mut current_pos));
+    }
+    path.reverse();
+
+    return path;
 }
+}
+    
 #[cfg(test)]
 mod tests {
     use super::*;
