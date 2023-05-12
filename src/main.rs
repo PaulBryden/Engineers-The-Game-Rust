@@ -72,7 +72,7 @@ async fn main() {
         let position = vec2(rand::gen_range::<f32>(1.0, 10.0) as f32, rand::gen_range::<f32>(1.0, 10.0) as f32);
         let uuid: u32 = rand::rand();
         let request: Request = Request::SpriteCreate(SpriteCreateRequest {tick:40 - position.x as u32, sprite_uuid: uuid, position: TilePosition{x: position.x as i32,y: position.y as i32}, sprite_type: SpriteType::Engineer});
-        game_manager.addRequest(request);
+        game_manager.addLocalRequest(request);
     }
 
     play_sound(

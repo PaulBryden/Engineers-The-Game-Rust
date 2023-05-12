@@ -194,6 +194,14 @@ impl GameManager {
     pub fn render(&mut self) {
         self.current_game_state.render();
     }
+        
+    pub fn addLocalRequest(&mut self, request: Request) -> RequestStatus {
+        //Send Request Over Network Here
+        /*
+        */
+        return self.addRequest(request);
+       
+    }
     pub fn addRequest(&mut self, request: Request) -> RequestStatus {
         self.requests.AddRequest(request);
         if (request.get_tick() < self.last_tick && (self.last_tick - request.get_tick()) < 45)
@@ -232,7 +240,7 @@ impl GameManager {
                             y: (world_to_grid_coords(mouse_coords).y - 0.5) as i32,
                         },
                     });
-                    self.addRequest(request);
+                    self.addLocalRequest(request);
                 }
             }
         }
