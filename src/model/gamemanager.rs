@@ -106,6 +106,10 @@ impl GameManager {
         return self.addRequest(request);
        
     }
+    pub fn addNetworkRequest(&mut self, request: Request) -> RequestStatus {
+        return self.addRequest(request);
+       
+    }
     pub fn addRequest(&mut self, request: Request) -> RequestStatus {
         self.requests.AddRequest(request);
         if (request.get_tick() < self.last_tick && (self.last_tick - request.get_tick()) < 45)
