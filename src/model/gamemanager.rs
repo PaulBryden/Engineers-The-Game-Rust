@@ -8,6 +8,7 @@ use crate::SpriteMoveRequest;
 use crate::TilePosition;
 use crate::Vec2;
 use crate::sprites::engineersprite::Engineer;
+use crate::sprites::mechsprite::Mech;
 use include_dir::include_dir;
 use macroquad::texture::Texture2D;
 use quad_net::web_socket::WebSocket;
@@ -80,6 +81,19 @@ impl GameManager {
                         );
                         engineer_entity.update_path(std::mem::take(&mut path))
                     }
+                    SpriteID::Mech(mech_entity) => {
+                        let mut path = self.pathfinder.find_path(
+                            TilePosition {
+                                x: mech_entity.get_tile_pos().x as i32,
+                                y: mech_entity.get_tile_pos().y as i32,
+                            },
+                            TilePosition {
+                                x: (sprite_move.position.x ) as i32,
+                                y: (sprite_move.position.y) as i32,
+                            },
+                        );
+                        mech_entity.update_path(std::mem::take(&mut path))
+                    }
                     _default => {}
                 }
             }
@@ -89,6 +103,13 @@ impl GameManager {
                     {
                         let engy_sprite =  Engineer::new(request.position.x, request.position.y, 64, 64, Texture2D::from_file_with_format(include_dir!("assets").get_file("spritesheet_rock.png").unwrap().contents(),None), request.sprite_uuid, Texture2D::from_file_with_format(include_dir!("assets").get_file("selected.png").unwrap().contents(), None));
                         self.current_game_state.sprite_map.insert(request.sprite_uuid, SpriteID::Engineer(engy_sprite));
+                        self.current_game_state.sprite_uuid_list.push(request.sprite_uuid);
+                        
+                    },
+                    crate::model::requests::SpriteType::Mech =>
+                    {
+                        let engy_sprite =  Mech::new(request.position.x, request.position.y, 64, 64, request.sprite_uuid, Texture2D::from_file_with_format(include_dir!("assets").get_file("selected.png").unwrap().contents(), None));
+                        self.current_game_state.sprite_map.insert(request.sprite_uuid, SpriteID::Mech(engy_sprite));
                         self.current_game_state.sprite_uuid_list.push(request.sprite_uuid);
                         
                     }

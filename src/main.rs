@@ -14,6 +14,7 @@ use macroquad::{
 mod sprites {
     pub mod engineersprite;
     pub mod sprite;
+    pub mod mechsprite;
     pub mod tilesprite;
 }
 mod model {
@@ -92,10 +93,17 @@ async fn main() {
     game_manager.current_game_state.process_tick(tick_count);
        
     /*Generate Random Create Requests for Engineers */
-    for _i in 0..8 {
+    for _i in 0..3 {
         let position = vec2(rand::gen_range::<f32>(1.0, 10.0) as f32, rand::gen_range::<f32>(1.0, 10.0) as f32);
         let uuid: u32 = rand::rand();
         let request: Request = Request::SpriteCreate(SpriteCreateRequest {tick:40 - position.x as u32, sprite_uuid: uuid, position: TilePosition{x: position.x as i32,y: position.y as i32}, sprite_type: SpriteType::Engineer});
+        game_manager.addLocalRequest(request);
+    }
+    /*Generate Random Create Requests for Mechs */
+    for _i in 0..3 {
+        let position = vec2(rand::gen_range::<f32>(1.0, 10.0) as f32, rand::gen_range::<f32>(1.0, 10.0) as f32);
+        let uuid: u32 = rand::rand();
+        let request: Request = Request::SpriteCreate(SpriteCreateRequest {tick:40 - position.x as u32, sprite_uuid: uuid, position: TilePosition{x: position.x as i32,y: position.y as i32}, sprite_type: SpriteType::Mech});
         game_manager.addLocalRequest(request);
     }
 

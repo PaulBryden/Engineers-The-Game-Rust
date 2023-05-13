@@ -54,6 +54,11 @@ impl GameState {
                         selected = engineer_entity.uuid;
                     }
                 }
+                SpriteID::Mech(mech_entity) => {
+                    if mech_entity.is_within_bounds(mouse_coords) {
+                        selected = mech_entity.uuid;
+                    }
+                }
                 _default => {}
             };
         }
@@ -70,6 +75,9 @@ impl GameState {
                 SpriteID::Engineer(engineer_entity) => {
                     engineer_entity.tick(1); //each tick is 20ms
                 }
+                SpriteID::Mech(mech_entity) => {
+                    mech_entity.tick(1);
+                }
                 SpriteID::Tile(_tile_entity) => {}
             }
         }
@@ -82,6 +90,9 @@ impl GameState {
                 SpriteID::Engineer(engineer_entity) => {
                     engineer_entity.selected = false;
                 }
+                SpriteID::Mech(mech_entity) => {
+                    mech_entity.selected = false;
+                }
                 _default => {}
             }
         }
@@ -91,7 +102,11 @@ impl GameState {
                 engineer_entity.selected = true;
                 self.selected_entity = uuid;
             }
-            _default => {}
+            SpriteID::Mech(mech_entity) => {
+                mech_entity.selected = true;
+                self.selected_entity = uuid;
+            }
+                _default => {}
         }
     }
 }

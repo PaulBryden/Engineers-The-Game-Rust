@@ -11,6 +11,7 @@ pub struct SpriteMoveRequest {
 #[derive(Serialize, Deserialize,Copy, Clone)]
 pub enum SpriteType {
     Engineer,
+    Mech
 }
 
 #[derive(Serialize, Deserialize,Copy, Clone)]
@@ -89,8 +90,6 @@ mod tests {
             sprite_uuid: 113232,
             position: TilePosition { x: 0, y: 0 },
         });
-        let mut uuid_holding_variable_1: u32 = 1;
-        let mut uuid_holding_variable_2: u32 = 2;
         request_queue.AddRequest(request_2);
         assert_eq!(request_queue.GetNumberOfRequests() == 1, true);
         request_queue.AddRequest(request_1);

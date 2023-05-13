@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 use super::engineersprite::Engineer;
+use super::mechsprite::Mech;
 use super::tilesprite::TileSprite;
 pub trait Sprite {
     fn get_zindex(&self) -> u32;
@@ -9,6 +10,7 @@ pub trait Sprite {
 #[derive(Clone)]
 pub enum SpriteID {
     Engineer(Engineer),
+    Mech(Mech),
     Tile(TileSprite)
 }
 
@@ -18,18 +20,21 @@ impl Sprite for SpriteID
 fn get_zindex(&self) -> u32 { 
     match self{
         SpriteID::Engineer(engineer_entity) => engineer_entity.get_zindex(),
+        SpriteID::Mech(mech_entity) => mech_entity.get_zindex(),
         SpriteID::Tile(tile_entity) => tile_entity.get_zindex()
     }
 }
 fn get_tile_pos(&self) -> macroquad::math::Vec2 {
     match self{
         SpriteID::Engineer(engineer_entity) => engineer_entity.get_tile_pos(),
+        SpriteID::Mech(mech_entity) => mech_entity.get_tile_pos(),
         SpriteID::Tile(tile_entity) => tile_entity.get_tile_pos()
     }
  }
 fn draw(&mut self) {
     match self{
         SpriteID::Engineer(engineer_entity) => engineer_entity.draw(),
+        SpriteID::Mech(mech_entity) => mech_entity.draw(),
         SpriteID::Tile(tile_entity) => tile_entity.draw()
     }
  }
