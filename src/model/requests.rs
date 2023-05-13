@@ -1,18 +1,19 @@
 use super::super::pathfinding::pathfinder::TilePosition;
 use std::collections::VecDeque;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Serialize, Deserialize,Debug, Copy, Clone, Default)]
 pub struct SpriteMoveRequest {
     pub tick: u32,
     pub sprite_uuid: u32,
     pub position: TilePosition,
 }
-#[derive(Copy, Clone)]
+#[derive(Serialize, Deserialize,Copy, Clone)]
 pub enum SpriteType {
     Engineer,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Serialize, Deserialize,Copy, Clone)]
 pub struct SpriteCreateRequest {
     pub tick: u32,
     pub sprite_uuid: u32,
@@ -20,7 +21,7 @@ pub struct SpriteCreateRequest {
     pub position: TilePosition,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Serialize, Deserialize,Copy, Clone)]
 pub enum Request {
     SpriteMove(SpriteMoveRequest),
     SpriteCreate(SpriteCreateRequest),

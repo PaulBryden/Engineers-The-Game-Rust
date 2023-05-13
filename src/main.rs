@@ -3,6 +3,8 @@ use crate::model::gamemanager::GameManager;
 use include_dir::include_dir;
 use include_dir::Dir;
 use macroquad::prelude::*;
+use quad_net::quad_socket::client::QuadSocket;
+
 mod pathfinding {
     pub mod pathfinder;
 }
@@ -21,6 +23,7 @@ mod model {
 }
 pub mod tiledmap;
 use pathfinding::pathfinder::{Pathfinder, TilePosition};
+use quad_net::web_socket::WebSocket;
 use sprites::sprite::{world_to_grid_coords, SpriteID};
 use model::requests::*;
 #[macroquad::main("engineers")]
@@ -56,8 +59,32 @@ async fn main() {
     /*Create Game State*/
     let game_state: GameState = GameState{sprite_map:sprite_map_store, sprite_uuid_list:render_list, selected_entity: 0};
 
+    /*initialize web socket connection to server */
+    #[cfg(not(target_arch = "wasm32"))]
+    let mut socket = WebSocket::connect("ws://127.0.0.1:3012/12345").unwrap();
+    #[cfg(target_arch = "wasm32")]
+    let mut socket = WebSocket::connect("ws://127.0.0.1:3012/12345").unwrap();
+
+    {
+        while socket.connected() == false {
+            next_frame().await;
+        }
+    }
+    let mut connected=false;
+    while(!connected)
+    {
+        println!("Waiting on Data...");
+
+        while let Some(event) =  socket.try_recv(){
+            println!("Received {:?}", event);
+            connected=true;
+        }
+        socket.send_text(("1"));
+        next_frame().await;
+    }
+
     /*Create Game Manager*/
-    let mut game_manager: GameManager = GameManager{requests: RequestQueue::default(), game_state_history: std::collections::HashMap::new(), current_game_state: game_state, last_tick: 0, pathfinder:  Pathfinder::new(tilemap_struct)};
+    let mut game_manager: GameManager = GameManager{socket: socket, requests: RequestQueue::default(), game_state_history: std::collections::HashMap::new(), current_game_state: game_state, last_tick: 0, pathfinder:  Pathfinder::new(tilemap_struct)};
  
     /*Initialize Game State By executing first tick - 0 */
     let mut last_tick_time: f64 = get_time();
@@ -108,9 +135,10 @@ async fn main() {
             println!("Grid Y: {}", world_to_grid_coords(world_vec).y);
         }
 
+        
         /*Get current game clock time*/
         let current_time = get_time();
-
+        game_manager.getNetworkRequests();
         while(current_time-last_tick_time>=0.05)
         {
             tick_count=tick_count+1;

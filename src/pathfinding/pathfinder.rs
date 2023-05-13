@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
+use serde::{Serialize, Deserialize};
 
 // Pathfinder struct that contains a tilemap
 pub struct Pathfinder {
@@ -11,7 +12,7 @@ pub struct Pathfinder {
 }
 
 // TilePosition struct that represents the position of a tile on the map
-#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct TilePosition {
     pub x: i32,
     pub y: i32,

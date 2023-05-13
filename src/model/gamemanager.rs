@@ -10,6 +10,8 @@ use crate::Vec2;
 use crate::sprites::engineersprite::Engineer;
 use include_dir::include_dir;
 use macroquad::texture::Texture2D;
+use quad_net::web_socket::WebSocket;
+use serde::{Serialize, Deserialize};
 
 type Tick = u32;
 
@@ -23,6 +25,7 @@ pub struct GameManager {
     pub current_game_state: GameState,
     pub last_tick: u32,
     pub pathfinder: Pathfinder,
+    pub socket: WebSocket
 }
 
 impl GameManager {
@@ -61,7 +64,7 @@ impl GameManager {
                 match &mut self
                     .current_game_state
                     .sprite_map
-                    .get_mut(&self.current_game_state.selected_entity)
+                    .get_mut(&sprite_move.sprite_uuid)
                     .unwrap()
                 {
                     SpriteID::Engineer(engineer_entity) => {
@@ -103,7 +106,26 @@ impl GameManager {
         //Send Request Over Network Here
         /*
         */
+        self.socket.send_text(serde_json::to_string(&request).unwrap().as_str());
         return self.addRequest(request);
+       
+    }
+    pub fn getNetworkRequests(&mut self) {
+        
+        while let Some(event) =  self.socket.try_recv(){
+            println!("Received {:?}", event);
+            match serde_json::from_str(std::str::from_utf8(&event).unwrap())
+            {
+                Err(e) => {
+                    println!("Error:{}", e);
+                }
+                Ok(response) =>
+                {
+                    self.addNetworkRequest(response);
+                }
+            }
+
+        }
        
     }
     pub fn addNetworkRequest(&mut self, request: Request) -> RequestStatus {
