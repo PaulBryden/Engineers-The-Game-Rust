@@ -1,4 +1,4 @@
-use crate::model::gamemanager::GameState;
+use crate::model::gamestate::GameState;
 use crate::model::gamemanager::GameManager;
 use include_dir::include_dir;
 use include_dir::Dir;
@@ -19,6 +19,7 @@ mod sprites {
 mod model {
     pub mod requests;
     pub mod gamemanager;
+    pub mod gamestate;
 }
 pub mod tiledmap;
 use pathfinding::pathfinder::{Pathfinder, TilePosition};
