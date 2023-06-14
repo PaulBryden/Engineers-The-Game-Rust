@@ -13,4 +13,6 @@ cargo install devserver
 cp target/wasm32-unknown-unknown/release/engineers.wasm web/engineers.wasm
 cd web
 devserver
-```
+```  
+The game server repository can be found at:
+<https://github.com/PaulBryden/Rust-P2P-Websocket-Proxy>
